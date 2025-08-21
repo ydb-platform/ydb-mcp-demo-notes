@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+# Установка системных зависимостей
+RUN apt-get update && apt-get install -y \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Создание рабочей директории
+WORKDIR /app
+
+# Установка ydb-mcp
+RUN pip install --no-cache-dir ydb-mcp
+
+# Установка переменных окружения по умолчанию
+ENV YDB_ENDPOINT=grpc://localhost:2136
+ENV YDB_DATABASE=/local
+
+# MCP работает через stdin/stdout, не через сеть
+# Команда запуска для stdin/stdout режима
+CMD ["sh", "-c", "python -m ydb_mcp --ydb-endpoint ${YDB_ENDPOINT} --ydb-database ${YDB_DATABASE}"]

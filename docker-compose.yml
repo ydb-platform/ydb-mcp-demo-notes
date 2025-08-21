@@ -9,6 +9,23 @@ services:
       - "2136:2136"   # gRPC endpoint
       - "8765:8765"   # Web UI
 
+  ydb-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.ydb-mcp
+    container_name: ydb-mcp
+    depends_on:
+      - ydb
+    network_mode: host
+    environment:
+      - YDB_ENDPOINT=grpc://localhost:2136
+      - YDB_DATABASE=/local
+    restart: unless-stopped
+    # MCP работает через stdin/stdout, не слушает сетевые порты
+    # Контейнер должен быть доступен для docker exec команд
+    tty: true
+    stdin_open: true
+
   notes-app:
     build: .
     container_name: notes-app
