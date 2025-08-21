@@ -14,7 +14,12 @@ cd ydb-mcp-show
 # Start YDB database
 docker-compose up -d ydb
 
-# Wait ~30 seconds for YDB to be ready, then initialize
+# Wait for YDB to be ready (usually takes 10-30 seconds)
+docker-compose ps
+# Wait until ydb-local container shows "Up X minutes (healthy)" status
+# Note: Web UI at http://localhost:8765 may load before DB is ready for queries
+
+# Initialize the database
 docker-compose run --rm notes-app init
 
 # Create your first note
@@ -24,6 +29,7 @@ docker-compose run --rm notes-app add "Hello" "My first note with YDB!"
 docker-compose run --rm notes-app list
 
 # View YDB Web UI at http://localhost:8765
+# (Use docker-compose ps to confirm "healthy" status for reliable DB readiness)
 ```
 
 ## Features
@@ -54,8 +60,10 @@ cd ydb-mcp-show
 # Start YDB database
 docker-compose up -d ydb
 
-# Wait for YDB to be ready (about 30-60 seconds)
-# You can check status at http://localhost:8765
+# Wait for YDB to be ready (usually takes 10-30 seconds)
+docker-compose ps
+# Wait until ydb-local container shows "Up X minutes (healthy)" status
+# Note: Web UI at http://localhost:8765 may load before DB is ready for queries
 
 # Build and run the notes application
 docker-compose build notes-app
@@ -65,6 +73,11 @@ docker-compose build notes-app
 ```bash
 # Start YDB database only
 docker-compose up -d ydb
+
+# Wait for YDB to be ready (usually takes 10-30 seconds)
+docker-compose ps
+# Wait until ydb-local container shows "Up X minutes (healthy)" status
+# Note: Web UI at http://localhost:8765 may load before DB is ready for queries
 
 # Install Python dependencies locally
 pip install -r requirements.txt
@@ -87,7 +100,12 @@ export YDB_DATABASE="/your/database/path"
 # Start YDB database
 docker-compose up -d ydb
 
-# Wait for YDB to be ready, then initialize
+# Wait for YDB to be ready (usually takes 10-30 seconds)
+docker-compose ps
+# Wait until ydb-local container shows "Up X minutes (healthy)" status
+# Note: Web UI at http://localhost:8765 may load before DB is ready for queries
+
+# Initialize the database
 docker-compose run --rm notes-app init
 ```
 
@@ -129,7 +147,12 @@ If you prefer to run Python locally with Docker YDB:
 # Start YDB database
 docker-compose up -d ydb
 
-# Wait for YDB to be ready, then initialize
+# Wait for YDB to be ready (usually takes 10-30 seconds)
+docker-compose ps
+# Wait until ydb-local container shows "Up X minutes (healthy)" status
+# Note: Web UI at http://localhost:8765 may load before DB is ready for queries
+
+# Initialize the database
 python notes.py init
 ```
 
@@ -163,8 +186,10 @@ Here's a complete example of getting started with the notes application using Do
 # 1. Start YDB database
 docker-compose up -d ydb
 
-# 2. Wait for YDB to be ready (check Web UI)
-open http://localhost:8765  # or curl http://localhost:8765/
+# 2. Wait for YDB to be ready (check until status shows "healthy")
+docker-compose ps
+# Wait until ydb-local container shows "Up X minutes (healthy)" status
+# Note: Web UI at http://localhost:8765 may load before DB is ready for queries
 
 # 3. Initialize the database
 docker-compose run --rm notes-app init
@@ -190,7 +215,12 @@ docker-compose down
 # 1. Start YDB database
 docker-compose up -d ydb
 
-# 2. Wait for YDB to be ready, then install dependencies
+# 2. Wait for YDB to be ready (check until status shows "healthy")
+docker-compose ps
+# Wait until ydb-local container shows "Up X minutes (healthy)" status
+# Note: Web UI at http://localhost:8765 may load before DB is ready for queries
+
+# 3. Install dependencies
 pip install -r requirements.txt
 
 # 3. Initialize and use the application
@@ -213,8 +243,10 @@ The easiest way to get started is using Docker Compose - no local Python install
 # Start YDB database
 docker-compose up -d ydb
 
-# Check YDB is running (optional)
-curl http://localhost:8765/
+# Wait for YDB to be ready (usually takes 10-30 seconds)
+docker-compose ps
+# Wait until ydb-local container shows "Up X minutes (healthy)" status
+# Note: Web UI at http://localhost:8765 may load before DB is ready for queries
 
 # Initialize and use the application
 docker-compose run --rm notes-app init
@@ -222,6 +254,7 @@ docker-compose run --rm notes-app add "My First Note" "Hello YDB!"
 docker-compose run --rm notes-app list
 
 # Access Web UI at http://localhost:8765
+# (docker-compose ps shows more reliable "healthy" status for DB readiness)
 
 # Stop when done
 docker-compose down

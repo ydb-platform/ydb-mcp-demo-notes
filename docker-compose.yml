@@ -3,25 +3,20 @@ version: '3.8'
 services:
   ydb:
     image: ydbplatform/local-ydb:latest
-    hostname: ydb
+    hostname: localhost
     container_name: ydb-local
     ports:
       - "2136:2136"   # gRPC endpoint
       - "8765:8765"   # Web UI
-    environment:
-      - YDB_DEFAULT_LOG_LEVEL=NOTICE
-      - GRPC_TLS_PORT=2135
-      - GRPC_PORT=2136
-      - MON_PORT=8765
-      - YDB_USE_IN_MEMORY_PDISKS=true
 
   notes-app:
     build: .
     container_name: notes-app
+    network_mode: host
     depends_on:
       - ydb
     environment:
-      - YDB_ENDPOINT=grpc://ydb:2136
+      - YDB_ENDPOINT=grpc://localhost:2136
       - YDB_DATABASE=/local
     profiles:
       - app

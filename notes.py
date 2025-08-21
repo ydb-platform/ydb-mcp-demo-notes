@@ -41,7 +41,6 @@ class NotesApp:
         self.use_env_auth = use_env_auth
         self.driver = None
         self.query_session_pool = None
-        self.session_pool = None
 
     def connect(self) -> bool:
         """Connect to YDB database.
@@ -68,9 +67,8 @@ class NotesApp:
             self.driver = ydb.Driver(config)
             self.driver.wait(fail_fast=True, timeout=5)
 
-            # Create both query session pool and table session pool 
+            # Create query session pool for all operations
             self.query_session_pool = ydb.QuerySessionPool(self.driver)
-            self.session_pool = ydb.SessionPool(self.driver)
 
             print(f"✅ Connected to YDB at {self.endpoint}")
             return True
@@ -94,32 +92,30 @@ class NotesApp:
             return False
 
         try:
-            def create_table_if_not_exists(session):
-                # Check if table already exists
-                try:
-                    session.describe_table('/local/notes')
-                    print("ℹ️  Table 'notes' already exists")
-                    return True
-                except ydb.SchemeError:
-                    # Table doesn't exist, create it
-                    pass
-
-                # Create notes table using table service (old API) 
-                session.create_table(
-                    '/local/notes',
-                    ydb.TableDescription()
-                    .with_column(ydb.Column('id', ydb.OptionalType(ydb.PrimitiveType.Utf8)))
-                    .with_column(ydb.Column('title', ydb.OptionalType(ydb.PrimitiveType.Utf8))) 
-                    .with_column(ydb.Column('content', ydb.OptionalType(ydb.PrimitiveType.Utf8)))
-                    .with_column(ydb.Column('created_at', ydb.OptionalType(ydb.PrimitiveType.Timestamp)))
-                    .with_column(ydb.Column('updated_at', ydb.OptionalType(ydb.PrimitiveType.Timestamp)))
-                    .with_primary_key('id')
-                )
+            try:
+                self.query_session_pool.execute_with_retries("SELECT * FROM notes LIMIT 0")
+                print("ℹ️  Table 'notes' already exists")
+            except ydb.SchemeError:
+                # Table doesn't exist, create it using Data Definition Language
+                print("📄 Creating table 'notes'...")
+                
+                # Create table using DDL syntax - MUST be executed outside transaction
+                create_table_query = """
+                    CREATE TABLE notes (
+                        id Utf8 NOT NULL,
+                        title Utf8,
+                        content Utf8,
+                        created_at Timestamp,
+                        updated_at Timestamp,
+                        PRIMARY KEY (id)
+                    );
+                """
+                
+                # Execute DDL outside transaction as per YDB Query Service requirements
+                self.query_session_pool.execute_with_retries(create_table_query)
                 print("✅ Table 'notes' created successfully")
-                return True
             
-            # Execute through table session pool (old API)
-            self.session_pool.retry_operation_sync(create_table_if_not_exists)
+            # Execute through query session pool (new API) for consistency
             print("🎉 Database initialized successfully!")
             return True
 
@@ -149,7 +145,7 @@ class NotesApp:
             def insert_note(session):
                 # Insert note using query-service
                 insert_query = """
-                    INSERT INTO `/local/notes` (id, title, content, created_at, updated_at)
+                    INSERT INTO notes (id, title, content, created_at, updated_at)
                     VALUES ($id, $title, $content, $created_at, $updated_at);
                 """
                 
@@ -187,7 +183,7 @@ class NotesApp:
                 # Get notes using query-service
                 select_query = """
                     SELECT id, title, updated_at
-                    FROM `/local/notes`
+                    FROM notes
                     ORDER BY updated_at DESC
                     LIMIT 5;
                 """
@@ -209,8 +205,7 @@ class NotesApp:
                 note_id = note.id
                 title = note.title
                 updated_at = note.updated_at.strftime("%Y-%m-%d %H:%M:%S")
-                print(f"🗒️  {note_id[:8]}... | {title[:40]:<40} |"
-                      f" {updated_at}")
+                print(f"🗒️  {note_id} | {title[:40]:<40} | {updated_at}")
 
             print("-" * 70)
             print(f"📊 Total: {len(notes)} note(s)")
@@ -239,7 +234,7 @@ class NotesApp:
                 # Get note using query-service
                 select_query = """
                     SELECT id, title, content, created_at, updated_at
-                    FROM `/local/notes`
+                    FROM notes
                     WHERE id = $id;
                 """
                 
@@ -290,7 +285,7 @@ class NotesApp:
         try:
             def delete_note(session):
                 # First check if note exists
-                check_query = "SELECT id FROM `/local/notes` WHERE id = $id;"
+                check_query = "SELECT id FROM notes WHERE id = $id;"
                 check_params = {'$id': ydb.TypedValue(note_id, ydb.PrimitiveType.Utf8)}
                 
                 check_result = session.transaction().execute(check_query, check_params, commit_tx=True)
@@ -301,7 +296,7 @@ class NotesApp:
                     return False
 
                 # Delete the note using query-service
-                delete_query = "DELETE FROM `/local/notes` WHERE id = $id;"
+                delete_query = "DELETE FROM notes WHERE id = $id;"
                 delete_params = {'$id': ydb.TypedValue(note_id, ydb.PrimitiveType.Utf8)}
                 
                 session.transaction().execute(delete_query, delete_params, commit_tx=True)
