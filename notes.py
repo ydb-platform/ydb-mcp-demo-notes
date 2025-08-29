@@ -23,8 +23,43 @@ import os
 import sys
 import uuid
 from datetime import datetime
+from pathlib import Path
 
 import ydb
+
+
+def load_env_file(env_file_path: str = "ydb.env") -> None:
+    """Load environment variables from configuration file.
+    
+    Args:
+        env_file_path: Path to the environment file
+    """
+    env_path = Path(env_file_path)
+    if env_path.exists():
+        print(f"📂 Loading YDB configuration from {env_file_path}")
+        with open(env_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                # Skip comments and empty lines
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    # Only set if not already in environment
+                    if key not in os.environ:
+                        os.environ[key] = value
+    else:
+        print(f"ℹ️  Configuration file {env_file_path} not found, "
+              "using localhost defaults")
+        # Set localhost defaults if no config file
+        if 'YDB_ENDPOINT' not in os.environ:
+            os.environ['YDB_ENDPOINT'] = 'grpc://localhost:2136'
+        if 'YDB_DATABASE' not in os.environ:
+            os.environ['YDB_DATABASE'] = '/local'
+        if 'AUTH_MODE' not in os.environ:
+            os.environ['AUTH_MODE'] = 'anonymous'
+
+
+# Load configuration at module level
+load_env_file()
 
 
 class NotesApp:
@@ -52,7 +87,7 @@ class NotesApp:
             # Create driver configuration with appropriate credentials
             if self.use_env_auth:
                 # Use authentication from environment variables
-                credentials = ydb.construct_credentials_from_environ()
+                credentials = ydb.credentials_from_env_variables()
             else:
                 # Use anonymous authentication (no credentials)
                 credentials = ydb.AnonymousCredentials()
@@ -99,7 +134,8 @@ class NotesApp:
                 # Table doesn't exist, create it using Data Definition Language
                 print("📄 Creating table 'notes'...")
                 
-                # Create table using DDL syntax - MUST be executed outside transaction
+                # Create table using DDL syntax - MUST be executed outside
+                # transaction
                 create_table_query = """
                     CREATE TABLE notes (
                         id Utf8 NOT NULL,
@@ -111,7 +147,8 @@ class NotesApp:
                     );
                 """
                 
-                # Execute DDL outside transaction as per YDB Query Service requirements
+                # Execute DDL outside transaction as per YDB Query Service
+                # requirements
                 self.query_session_pool.execute_with_retries(create_table_query)
                 print("✅ Table 'notes' created successfully")
             
@@ -384,8 +421,16 @@ Environment Variables:
         return 1
 
     # Create notes app instance with authentication mode
-    use_env_auth = (args.auth == 'env')
+    # Check if AUTH_MODE is set in environment, otherwise use command line argument
+    auth_mode = os.getenv('AUTH_MODE', args.auth)
+    use_env_auth = (auth_mode == 'env')
     app = NotesApp(use_env_auth=use_env_auth)
+    
+    if auth_mode != args.auth:
+        print(f"ℹ️  Using authentication mode from config: "
+              f"{auth_mode}")
+    else:
+        print(f"ℹ️  Using authentication mode: {auth_mode}")
 
     # Execute command
     success = False

@@ -3,36 +3,40 @@ services:
     image: ydbplatform/local-ydb:latest
     hostname: localhost
     container_name: ydb-local
-    ports:
-      - "2136:2136"   # gRPC endpoint
-      - "8765:8765"   # Web UI
+    network_mode: host
 
   ydb-mcp:
     build:
       context: .
       dockerfile: Dockerfile.ydb-mcp
-    container_name: ydb-mcp
+      network: host
     depends_on:
       - ydb
     network_mode: host
-    environment:
-      - YDB_ENDPOINT=grpc://localhost:2136
-      - YDB_DATABASE=/local
-    restart: unless-stopped
-    # MCP работает через stdin/stdout, не слушает сетевые порты
-    # Контейнер должен быть доступен для docker exec команд
-    tty: true
+    env_file:
+      # Load ydb.env if it exists, fallback to localhost defaults from Dockerfile
+      - path: ./ydb.env
+        required: false
+    volumes:
+      # Mount authorized_key.json if it exists (optional for localhost)
+      - ./authorized_key.json:/app/authorized_key.json:ro
+    # MCP works through stdin/stdout, not network ports
+    # Container will be created and removed automatically with --rm flag
     stdin_open: true
+    tty: false
 
   notes-app:
-    build: .
+    build:
+      context: .
+      network: host
     container_name: notes-app
     network_mode: host
     depends_on:
       - ydb
-    environment:
-      - YDB_ENDPOINT=grpc://localhost:2136
-      - YDB_DATABASE=/local
+    env_file:
+      # Load ydb.env if it exists, fallback to localhost defaults from Python app
+      - path: ./ydb.env
+        required: false
     volumes:
       - .:/app
     profiles:

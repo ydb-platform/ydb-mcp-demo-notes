@@ -1,20 +1,20 @@
 FROM python:3.11-slim
 
-# Установка системных зависимостей
-RUN apt-get update && apt-get install -y \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+# System dependencies are not required for ydb-mcp
 
-# Создание рабочей директории
+# Create working directory
 WORKDIR /app
 
-# Установка ydb-mcp
-RUN pip install --no-cache-dir ydb-mcp
+# Install ydb-mcp with Yandex Cloud support
+RUN pip install --no-cache-dir ydb-mcp ydb[yc]
 
-# Установка переменных окружения по умолчанию
+# Set default environment variables for localhost connection
+# These will be overridden by ydb.env file if it exists via docker-compose
 ENV YDB_ENDPOINT=grpc://localhost:2136
 ENV YDB_DATABASE=/local
+ENV YDB_ANONYMOUS_CREDENTIALS=1
 
-# MCP работает через stdin/stdout, не через сеть
-# Команда запуска для stdin/stdout режима
-CMD ["sh", "-c", "python -m ydb_mcp --ydb-endpoint ${YDB_ENDPOINT} --ydb-database ${YDB_DATABASE}"]
+# MCP works through stdin/stdout, not network
+# Startup command for stdin/stdout mode
+# Environment variables will be used by ydb_mcp automatically
+CMD ["python", "-m", "ydb_mcp"]

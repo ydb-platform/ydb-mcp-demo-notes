@@ -2,6 +2,8 @@
 
 A simple command-line notes application that uses YDB (Yandex Database) as storage. Perfect for learning YDB basics and building simple CLI tools.
 
+> **🎯 Unified Configuration**: All components (CLI app, Docker services, MCP server) now use shared configuration from `ydb.env` file. See [README-CONFIG.md](README-CONFIG.md) for detailed configuration guide.
+
 ## Quick Start (Docker Compose)
 
 The fastest way to get started (no Python installation required):
@@ -343,12 +345,18 @@ docker run --rm \
 
 ## Configuration
 
-The application uses environment variables for configuration:
+The application uses a unified configuration system through the `ydb.env` file and environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `YDB_ENDPOINT` | `grpc://localhost:2136` | YDB gRPC endpoint |
 | `YDB_DATABASE` | `/local` | YDB database path |
+| `AUTH_MODE` | `anonymous` | Authentication mode: `anonymous` or `env` |
+
+**📂 Configuration Files:**
+- `ydb.env` - Main configuration file (automatically loaded)
+- `README-CONFIG.md` - Detailed configuration guide
+- `load_ydb_env.sh` - Manual environment loading script
 
 ### Authentication Environment Variables (when using `--auth=env`)
 

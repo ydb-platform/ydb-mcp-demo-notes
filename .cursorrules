@@ -1,0 +1,19 @@
+# Cursor AI Rules for this project
+
+## Language Requirements
+- All code comments, documentation, commit messages, README files, and any other text content in this project MUST be written in simple English
+- No non-English languages should be used
+- Use clear, concise English that is easy to understand for international developers
+- Variable names, function names, and identifiers should follow English naming conventions
+
+## Code Style
+- Follow standard conventions for the respective programming languages used in this project
+- Write descriptive comments explaining complex logic
+- Use meaningful variable and function names in English
+- Keep documentation clear and accessible to English speakers
+
+## Documentation
+- All README files, configuration guides, and project documentation must be in English
+- Use simple, straightforward language to explain concepts
+- Avoid complex technical jargon when simpler terms suffice
+- Examples and code snippets should include English comments where appropriate

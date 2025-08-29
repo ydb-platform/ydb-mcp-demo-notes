@@ -21,8 +21,8 @@ RUN useradd --create-home --shell /bin/bash appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
-# Set environment variables with defaults
-ENV YDB_ENDPOINT=grpc://ydb:2136
+# Set environment variables with defaults for localhost connection
+ENV YDB_ENDPOINT=grpc://localhost:2136
 ENV YDB_DATABASE=/local
 
 # Set the entrypoint
