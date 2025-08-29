@@ -1,0 +1,16 @@
+{
+    "mcpServers": {
+      "ydb": {
+        "command": "/Users/rekby/projects/yandex/tmp/ydb-mcp-show/venv/bin/python",
+        "args": [
+          "-m",
+          "ydb_mcp",
+          "--ydb-endpoint",
+          "grpc://localhost:2136",
+          "--ydb-database",
+          "/local"
+        ]
+      }
+    }
+}
+  

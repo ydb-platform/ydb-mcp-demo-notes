@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   ydb:
     image: ydbplatform/local-ydb:latest
@@ -35,5 +33,7 @@ services:
     environment:
       - YDB_ENDPOINT=grpc://localhost:2136
       - YDB_DATABASE=/local
+    volumes:
+      - .:/app
     profiles:
       - app

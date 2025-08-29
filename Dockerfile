@@ -13,11 +13,8 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application
-COPY notes.py .
-
-# Make the script executable
-RUN chmod +x notes.py
+# Application files will be mounted as volume
+# No need to copy application files
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash appuser && \

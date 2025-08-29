@@ -272,10 +272,13 @@ The recommended approach is to use `docker-compose run` which automatically hand
 # Build the application (first time only)
 docker-compose build notes-app
 
-# Use the application
+# Use the application (YDB should be running first)
 docker-compose run --rm notes-app init
 docker-compose run --rm notes-app add "Title" "Content"
 docker-compose run --rm notes-app list
+
+# If YDB is already running on different ports or external instance:
+docker-compose run --rm --no-deps -e YDB_ENDPOINT=grpc://host.docker.internal:2136 notes-app init
 ```
 
 ### Manual Docker Build
