@@ -327,22 +327,30 @@ class NotesApp:
 
         try:
             def delete_note(session):
+                # Use single transaction for both check and delete
+                tx = session.transaction()
+                
                 # First check if note exists
                 check_query = "SELECT id FROM notes WHERE id = $id;"
                 check_params = {'$id': ydb.TypedValue(note_id, ydb.PrimitiveType.Utf8)}
                 
-                check_result = session.transaction().execute(check_query, check_params, commit_tx=True)
+                check_result = tx.execute(check_query, check_params)
                 check_result_sets = list(check_result)
                 existing_notes = check_result_sets[0].rows
 
                 if not existing_notes:
                     return False
 
-                # Delete the note using query-service
+                # Delete the note in the same transaction
                 delete_query = "DELETE FROM notes WHERE id = $id;"
                 delete_params = {'$id': ydb.TypedValue(note_id, ydb.PrimitiveType.Utf8)}
                 
-                session.transaction().execute(delete_query, delete_params, commit_tx=True)
+                delete_result = tx.execute(delete_query, delete_params)
+                # Consume the result to ensure the operation is completed
+                list(delete_result)
+                
+                # Commit the transaction
+                tx.commit()
                 return True
 
             deleted = self.query_session_pool.retry_operation_sync(delete_note)
