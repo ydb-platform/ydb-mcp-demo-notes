@@ -18,7 +18,7 @@ YDB_DATABASE=/local
 # Для продакшена установите одну из следующих переменных:
 
 # YDB_ACCESS_TOKEN_CREDENTIALS=your-access-token
-# YDB_SERVICE_ACCOUNT_KEY_FILE_CREDENTIALS=/path/to/key/file.json
+# YDB_SA_KEY_FILE=/path/to/key/file.json
 # YDB_ANONYMOUS_CREDENTIALS=1
 # YDB_METADATA_CREDENTIALS=1
 
@@ -118,7 +118,7 @@ YDB_ACCESS_TOKEN_CREDENTIALS=your-production-token
 YDB_ENDPOINT=grpc://prod-ydb-host:2136
 YDB_DATABASE=/production/database  
 AUTH_MODE=env
-YDB_SERVICE_ACCOUNT_KEY_FILE_CREDENTIALS=/path/to/sa-key.json
+YDB_SA_KEY_FILE=/path/to/sa-key.json
 ```
 
 ## Загрузка переменных из файла

@@ -82,13 +82,24 @@ class NotesApp:
         try:
             # Create driver configuration with appropriate credentials
             if self.auth_mode == 'service-account':
-                # Use service account authentication from environment variables
-                credentials = ydb.credentials_from_env_variables()
+                # Use service account authentication from authorized_key.json file
+                service_account_key_file = 'authorized_key.json'
+                if not os.path.exists(service_account_key_file):
+                    raise FileNotFoundError(
+                        f"Service account key file '{service_account_key_file}' "
+                        "not found"
+                    )
+                credentials = ydb.iam.ServiceAccountCredentials.from_file(
+                    service_account_key_file
+                )
             elif self.auth_mode == 'anonymous':
                 # Use anonymous authentication (no credentials)
                 credentials = ydb.AnonymousCredentials()
             else:
-                raise ValueError(f"Unsupported YDB_AUTH_MODE: {self.auth_mode}. Use 'anonymous' or 'service-account'")
+                raise ValueError(
+                    f"Unsupported YDB_AUTH_MODE: {self.auth_mode}. "
+                    "Use 'anonymous' or 'service-account'"
+                )
             
             config = ydb.DriverConfig(
                 endpoint=self.endpoint,
@@ -380,7 +391,8 @@ Examples:
     %(prog)s delete abc123def               # Delete note
     
     # Using service account authentication:
-    # Set YDB_AUTH_MODE=service-account and YDB_SERVICE_ACCOUNT_KEY_FILE_CREDENTIALS
+    # Set YDB_AUTH_MODE=service-account and place authorized_key.json in 
+    # current directory
 
 Environment Variables:
     YDB_ENDPOINT    YDB endpoint (default: grpc://localhost:2136)
@@ -388,8 +400,8 @@ Environment Variables:
     YDB_AUTH_MODE   Authentication mode: anonymous (default) or service-account
     
     Authentication (when YDB_AUTH_MODE=service-account):
-    YDB_SERVICE_ACCOUNT_KEY_FILE_CREDENTIALS, YDB_METADATA_CREDENTIALS,
-    YDB_ACCESS_TOKEN_CREDENTIALS, etc.
+    Place your service account key file as 'authorized_key.json' in the 
+    current directory.
     See: https://ydb.tech/docs/en/reference/ydb-sdk/auth
         """
     )

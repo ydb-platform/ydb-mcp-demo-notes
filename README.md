@@ -364,7 +364,7 @@ When using `--auth=env`, the application automatically detects authentication me
 
 Common authentication variables:
 - `YDB_ACCESS_TOKEN_CREDENTIALS` - Access token for authentication
-- `YDB_SERVICE_ACCOUNT_KEY_FILE_CREDENTIALS` - Path to service account key file
+- `YDB_SA_KEY_FILE` - Path to service account key file
 - `YDB_ANONYMOUS_CREDENTIALS=1` - Force anonymous authentication
 - `YDB_METADATA_CREDENTIALS=1` - Use metadata service authentication
 
