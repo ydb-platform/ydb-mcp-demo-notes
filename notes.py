@@ -183,18 +183,24 @@ class NotesApp:
                 # Insert note using query-service
                 insert_query = """
                     INSERT INTO notes (id, title, content, created_at, updated_at)
-                    VALUES ($id, $title, $content, $created_at, $updated_at);
+                    VALUES ($id, $title, $content, CAST($created_at AS Timestamp), CAST($updated_at AS Timestamp));
                 """
+                
+                # Convert datetime to ISO format string that YDB can parse
+                timestamp_str = now.isoformat() + 'Z' if now.tzinfo is None else now.isoformat()
                 
                 parameters = {
                     '$id': ydb.TypedValue(note_id, ydb.PrimitiveType.Utf8),
                     '$title': ydb.TypedValue(title, ydb.PrimitiveType.Utf8),
                     '$content': ydb.TypedValue(content, ydb.PrimitiveType.Utf8),
-                    '$created_at': ydb.TypedValue(now, ydb.PrimitiveType.Timestamp),
-                    '$updated_at': ydb.TypedValue(now, ydb.PrimitiveType.Timestamp),
+                    '$created_at': ydb.TypedValue(timestamp_str, ydb.PrimitiveType.Utf8),
+                    '$updated_at': ydb.TypedValue(timestamp_str, ydb.PrimitiveType.Utf8),
                 }
 
-                session.transaction().execute(insert_query, parameters, commit_tx=True)
+                result = session.transaction().execute(insert_query, parameters, commit_tx=True)
+                # Consume the result to ensure transaction is committed
+                list(result)
+                return True
 
             self.query_session_pool.retry_operation_sync(insert_note)
             print(f"✅ Note created with ID: {note_id}")
