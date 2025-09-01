@@ -54,8 +54,8 @@ def load_env_file(env_file_path: str = "ydb.env") -> None:
             os.environ['YDB_ENDPOINT'] = 'grpc://localhost:2136'
         if 'YDB_DATABASE' not in os.environ:
             os.environ['YDB_DATABASE'] = '/local'
-        if 'AUTH_MODE' not in os.environ:
-            os.environ['AUTH_MODE'] = 'anonymous'
+        if 'YDB_AUTH_MODE' not in os.environ:
+            os.environ['YDB_AUTH_MODE'] = 'anonymous'
 
 
 # Load configuration at module level
@@ -65,15 +65,11 @@ load_env_file()
 class NotesApp:
     """Simple notes application using YDB as storage."""
 
-    def __init__(self, use_env_auth: bool = False):
-        """Initialize the notes application.
-
-        Args:
-            use_env_auth: If True, use authentication from environment variables
-        """
+    def __init__(self):
+        """Initialize the notes application."""
         self.endpoint = os.getenv('YDB_ENDPOINT', 'grpc://localhost:2136')
         self.database = os.getenv('YDB_DATABASE', '/local')
-        self.use_env_auth = use_env_auth
+        self.auth_mode = os.getenv('YDB_AUTH_MODE', 'anonymous')
         self.driver = None
         self.query_session_pool = None
 
@@ -85,12 +81,14 @@ class NotesApp:
         """
         try:
             # Create driver configuration with appropriate credentials
-            if self.use_env_auth:
-                # Use authentication from environment variables
+            if self.auth_mode == 'service-account':
+                # Use service account authentication from environment variables
                 credentials = ydb.credentials_from_env_variables()
-            else:
+            elif self.auth_mode == 'anonymous':
                 # Use anonymous authentication (no credentials)
                 credentials = ydb.AnonymousCredentials()
+            else:
+                raise ValueError(f"Unsupported YDB_AUTH_MODE: {self.auth_mode}. Use 'anonymous' or 'service-account'")
             
             config = ydb.DriverConfig(
                 endpoint=self.endpoint,
@@ -380,29 +378,23 @@ Examples:
     %(prog)s list                           # Show recent notes
     %(prog)s show abc123def                 # Show specific note
     %(prog)s delete abc123def               # Delete note
-    %(prog)s --auth=env init                # Initialize with env auth
+    
+    # Using service account authentication:
+    # Set YDB_AUTH_MODE=service-account and YDB_SERVICE_ACCOUNT_KEY_FILE_CREDENTIALS
 
 Environment Variables:
     YDB_ENDPOINT    YDB endpoint (default: grpc://localhost:2136)
     YDB_DATABASE    YDB database path (default: /local)
+    YDB_AUTH_MODE   Authentication mode: anonymous (default) or service-account
     
-    Authentication (when --auth=env is used):
-    YDB_SERVICE_ACCOUNT_KEY_FILE_CREDENTIALS, YDB_ANONYMOUS_CREDENTIALS,
-    YDB_METADATA_CREDENTIALS, YDB_ACCESS_TOKEN_CREDENTIALS, etc.
+    Authentication (when YDB_AUTH_MODE=service-account):
+    YDB_SERVICE_ACCOUNT_KEY_FILE_CREDENTIALS, YDB_METADATA_CREDENTIALS,
+    YDB_ACCESS_TOKEN_CREDENTIALS, etc.
     See: https://ydb.tech/docs/en/reference/ydb-sdk/auth
         """
     )
     
-    # Add global authentication option
-    parser.add_argument(
-        '--auth',
-        choices=['anonymous', 'env'],
-        default='anonymous',
-        help='Authentication mode: anonymous (default) or env '
-             '(from environment variables). '
-             'For env mode details see: '
-             'https://ydb.tech/docs/en/reference/ydb-sdk/auth'
-    )
+
 
     subparsers = parser.add_subparsers(dest='command',
                                        help='Available commands')
@@ -434,17 +426,11 @@ Environment Variables:
         parser.print_help()
         return 1
 
-    # Create notes app instance with authentication mode
-    # Check if AUTH_MODE is set in environment, otherwise use command line argument
-    auth_mode = os.getenv('AUTH_MODE', args.auth)
-    use_env_auth = (auth_mode == 'env')
-    app = NotesApp(use_env_auth=use_env_auth)
+    # Create notes app instance
+    app = NotesApp()
     
-    if auth_mode != args.auth:
-        print(f"ℹ️  Using authentication mode from config: "
-              f"{auth_mode}")
-    else:
-        print(f"ℹ️  Using authentication mode: {auth_mode}")
+    # Display authentication mode being used
+    print(f"ℹ️  Using YDB authentication mode: {app.auth_mode}")
 
     # Execute command
     success = False
